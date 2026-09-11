@@ -1,4 +1,5 @@
 name: Python check
+run-name: "Python check ${{ inputs.leg || github.event_name }} ${{ inputs.racecar_run }}"
 
 on:
   push:
@@ -6,6 +7,24 @@ on:
   pull_request:
     branches: [ main ]
 
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: "baseline (uninstrumented) or instrumented (under chalk/curiosity)"
+        type: choice
+        options: [instrumented, baseline]
+        default: baseline
+      profile:
+        description: "CrashOverride chalk profile"
+        type: string
+        default: curiosity-tests-racecar
+      racecar_run:
+        description: "racecar correlation token, echoed into the run name"
+        type: string
+        default: ""
+
+env:
+  CHALK_ON: ${{ inputs.leg == 'instrumented' }}
 jobs:
   test_package:
     name: Test ${{ matrix.os }} Python ${{ matrix.python_version }}
@@ -37,6 +56,7 @@ jobs:
             pip install -r requirements.txt
             pip install flake8
         - name: Look for major issues with flake8
+          continue-on-error: true   # racecar: scan/report/push step, must not fail the build
           run: |
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         - name: Make sure Python code is all compilable
