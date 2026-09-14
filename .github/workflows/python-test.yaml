@@ -44,7 +44,15 @@ jobs:
         # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-        - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        - uses: crashappsec/action-checkout@main
+          with:
+            chalk: ${{ env.CHALK_ON }}
+            profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
+            lfs: false
+        - name: Assert instrumentation is live
+          if: env.CHALK_ON == 'true'
+          run: |
+            test -n "${CURIOSITY_ROOT:-}" || { echo "::error::CURIOSITY_ROOT unset - observables never installed"; exit 1; }
         - name: Setup python
           uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
           with:
